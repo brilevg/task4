@@ -1,17 +1,55 @@
 services:
 
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: monitoring
+      POSTGRES_USER: monitor
+      POSTGRES_PASSWORD: monitorpass
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
   prometheus:
     image: prom/prometheus
     container_name: prometheus
+
     ports:
       - "9090:9090"
+
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
     restart: unless-stopped
 
   grafana:
     image: grafana/grafana
     container_name: grafana
+
     ports:
       - "3000:3000"
+
     restart: unless-stopped
+
+  sql-exporter:
+    image: burningalchemist/sql_exporter
+    container_name: sql-exporter
+
+    ports:
+      - "9399:9399"
+
+    volumes:
+      - ./sql_exporter.yml:/config.yml
+      - ./os.collector.yml:/os.collector.yml
+
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

@@ -1,0 +1,27 @@
+collector_name: os_collector
+
+metrics:
+
+  - metric_name: installed_software_count
+    type: gauge
+    help: "Количество установленного ПО"
+
+    values:
+      - software_count
+
+    query: |
+      SELECT COUNT(*) AS software_count
+      FROM software;
+
+  - metric_name: latest_os_scan
+    type: gauge
+    help: "Последнее сканирование ОС"
+
+    values:
+      - id
+
+    query: |
+      SELECT id
+      FROM os_info
+      ORDER BY collected_at DESC
+      LIMIT 1;
