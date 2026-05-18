@@ -50,6 +50,23 @@ services:
       - ./os.collector.yml:/os.collector.yml
 
     restart: unless-stopped
+  cdxgen:
+    image: ghcr.io/cyclonedx/cdxgen:master
+    container_name: cdxgen
 
+    volumes:
+      - /:/app:ro
+      - .:/output
+
+    command: >
+      sh -c "
+      while true;
+      do
+        cdxgen -t os -o /output/sbom.json /app;
+        sleep 300;
+      done
+      "
+
+    restart: unless-stopped
 volumes:
   postgres_data:
