@@ -63,15 +63,15 @@ services:
       sh -c "
       while true;
       do
-      cdxgen /app \
-      -t os \
-      --no-babel \
-      --exclude '/proc/**' \
-      --exclude '/sys/**' \
-      --exclude '/dev/**' \
-      --exclude '/run/**' \
-      -o /output/sbom.json;
-      sleep 300;
+        cdxgen /app \
+          -t os \
+          --no-babel \
+          --exclude '/proc/**' \
+          --exclude '/sys/**' \
+          --exclude '/dev/**' \
+          --exclude '/run/**' \
+          -o /output/sbom.json;
+        sleep 300;
       done
       "
 
