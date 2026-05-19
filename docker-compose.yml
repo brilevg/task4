@@ -56,8 +56,9 @@ services:
     environment:
       CDXGEN_PLUGINS_DISABLED: ruby
     volumes:
-      - /:/app:ro
-      - .:/output
+      - /usr:/app/usr:ro
+      - /etc:/app/etc:ro
+      - ./sbom:/output
 
     command: >
       sh -c "
