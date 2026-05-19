@@ -53,7 +53,8 @@ services:
   cdxgen:
     image: ghcr.io/cyclonedx/cdxgen:master
     container_name: cdxgen
-
+    environment:
+      CDXGEN_PLUGINS_DISABLED: ruby
     volumes:
       - /:/app:ro
       - .:/output
@@ -62,8 +63,15 @@ services:
       sh -c "
       while true;
       do
-        cdxgen -t os -o /output/sbom.json /app;
-        sleep 300;
+      cdxgen /app \
+      -t os \
+      --no-babel \
+      --exclude '/proc/**' \
+      --exclude '/sys/**' \
+      --exclude '/dev/**' \
+      --exclude '/run/**' \
+      -o /output/sbom.json;
+      sleep 300;
       done
       "
 
