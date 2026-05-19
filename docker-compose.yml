@@ -56,21 +56,14 @@ services:
     environment:
       CDXGEN_PLUGINS_DISABLED: ruby
     volumes:
-      - /usr:/app/usr:ro
-      - /etc:/app/etc:ro
+      - /var/lib/pacman/local:/app/pacman:ro
       - ./sbom:/output
 
     command: >
       sh -c "
       while true;
       do
-        cdxgen /app \
-          -t os \
-          --no-babel \
-          --exclude '/proc/**' \
-          --exclude '/sys/**' \
-          --exclude '/dev/**' \
-          --exclude '/run/**' \
+        cdxgen /app/pacman \
           -o /output/sbom.json;
         sleep 300;
       done
