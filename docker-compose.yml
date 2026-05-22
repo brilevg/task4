@@ -50,25 +50,5 @@ services:
       - ./os.collector.yml:/os.collector.yml
 
     restart: unless-stopped
-  cdxgen:
-    image: ghcr.io/cyclonedx/cdxgen:master
-    container_name: cdxgen
-    environment:
-      CDXGEN_PLUGINS_DISABLED: ruby
-    volumes:
-      - /var/lib/pacman/local:/app/pacman:ro
-      - ./sbom:/output
-
-    command: >
-      sh -c "
-      while true;
-      do
-        cdxgen /app/pacman \
-          -o /output/sbom.json;
-        sleep 300;
-      done
-      "
-
-    restart: unless-stopped
 volumes:
   postgres_data:
