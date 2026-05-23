@@ -44,7 +44,8 @@ services:
 
     ports:
       - "9399:9399"
-
+    command:
+      - "-config.file=/config.yml" 
     volumes:
       - ./sql_exporter.yml:/config.yml
       - ./os.collector.yml:/os.collector.yml
