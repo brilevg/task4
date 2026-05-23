@@ -14,8 +14,8 @@ VALUES
 RETURNING id;
 " | tr -d ' ')
 
-grep '"name"' /home/arch/sbom/sbom.json > /tmp/names.txt
-grep '"version"' /home/arch/sbom/sbom.json > /tmp/versions.txt
+grep '"name"' /root/task4/sbom.json > /tmp/names.txt
+grep '"version"' /root/task4/sbom.json > /tmp/versions.txt
 
 paste /tmp/names.txt /tmp/versions.txt | while read line
 do
