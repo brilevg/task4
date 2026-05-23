@@ -3,7 +3,7 @@ import subprocess
 import uuid
 import platform
 
-SBOM_PATH = "/home/arch/sbom/sbom.json"
+SBOM_PATH = "/root/task4/sbom/sbom.json"
 
 with open(SBOM_PATH, "r") as f:
     data = json.load(f)
