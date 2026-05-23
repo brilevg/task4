@@ -21,7 +21,7 @@ paste /tmp/names.txt /tmp/versions.txt | while read line
 do
     NAME=$(echo "$line" | cut -d '"' -f4)
 
-    VERSION=$(echo "$line" | rev | cut -d '"' -f2 | rev)
+    VERSION=$(echo "$line" | awk -F'"' '{print $(NF-1)}')
 
     docker exec -i postgres psql -U monitor -d monitoring -c "
     INSERT INTO software
