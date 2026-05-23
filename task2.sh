@@ -6,14 +6,14 @@ OS_NAME=$(uname -o)
 
 KERNEL=$(uname -r)
 
-OS_ID=$(docker exec -i postgres psql -U monitor -d monitoring -t -A -c "
+OS_ID=$(docker exec -i postgres psql -U monitor -d monitoring -q -t -A -c "
 INSERT INTO os_info
 (host_uuid, hostname, os_name, kernel_version)
 VALUES
 ('$HOST_UUID', 'archlinux', '$OS_NAME', '$KERNEL')
 RETURNING id;
-")
-
+" | tail -n 1 | tr -d '[:space:]')
+echo "OS_ID=$OS_ID"
 grep '"name"' /root/task4/sbom/sbom.json > /tmp/names.txt
 grep '"version"' /root/task4/sbom/sbom.json > /tmp/versions.txt
 
