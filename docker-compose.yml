@@ -39,7 +39,7 @@ services:
     restart: unless-stopped
 
   sql-exporter:
-    image: burningalchemist/sql_exporter
+    image: burningalchemist/sql_exporter:0.14.0
     container_name: sql-exporter
 
     ports:
