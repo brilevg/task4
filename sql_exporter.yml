@@ -31,7 +31,6 @@ collectors:
       ORDER BY collected_at DESC
       LIMIT 1
 
-  # 2. Количество установленного ПО (для графика)
   - collector_name: packages_count
     metrics:
       - metric_name: installed_packages_total
