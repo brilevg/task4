@@ -1,0 +1,89 @@
+groups:
+
+  - name: monitoring_alerts
+
+    rules:
+
+      - alert: CdxgenHeartbeatLost
+
+        expr: time() - cdxgen_last_scan_timestamp > 1800
+
+        for: 1m
+
+        labels:
+          severity: critical
+
+        annotations:
+          summary: "cdxgen heartbeat lost"
+
+          description: "No SBOM scan data received for more than 30 minutes"
+
+      - alert: OsvHeartbeatLost
+
+        expr: time() - osv_last_scan_timestamp > 1800
+
+        for: 1m
+
+        labels:
+          severity: critical
+
+        annotations:
+          summary: "osv-scanner heartbeat lost"
+
+          description: "No vulnerability scan data received for more than 30 minutes"
+
+      - alert: CriticalVulnerabilitiesDetected
+
+        expr: vulnerabilities_total{severity=~".*CRITICAL.*"} >= 1
+
+        for: 1m
+
+        labels:
+          severity: critical
+
+        annotations:
+          summary: "Critical vulnerabilities detected"
+
+          description: "At least one CRITICAL vulnerability detected"
+
+      - alert: HighVulnerabilitiesDetected
+
+        expr: vulnerabilities_total{severity=~".*HIGH.*"} >= 3
+
+        for: 1m
+
+        labels:
+          severity: high
+
+        annotations:
+          summary: "High vulnerabilities threshold exceeded"
+
+          description: "Three or more HIGH vulnerabilities detected"
+
+      - alert: MediumVulnerabilitiesDetected
+
+        expr: vulnerabilities_total{severity=~".*MEDIUM.*"} >= 5
+
+        for: 1m
+
+        labels:
+          severity: medium
+
+        annotations:
+          summary: "Medium vulnerabilities threshold exceeded"
+
+          description: "Five or more MEDIUM vulnerabilities detected"
+
+      - alert: LowVulnerabilitiesDetected
+
+        expr: sum(vulnerabilities_total) >= 10
+
+        for: 1m
+
+        labels:
+          severity: warning
+
+        annotations:
+          summary: "Large amount of vulnerabilities detected"
+
+          description: "Ten or more vulnerabilities detected"

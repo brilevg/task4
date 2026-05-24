@@ -9,6 +9,8 @@ target:
     - package_stats
     - vulnerabilities_table
     - vulnerabilities_count
+    - cdxgen_heartbeat
+    - osv_heartbeat
 
 collectors:
 
@@ -114,3 +116,35 @@ collectors:
           JOIN vulnerability v
             ON vs.vulnerability_id = v.id
           GROUP BY v.severity
+  - collector_name: cdxgen_heartbeat
+
+    metrics:
+      - metric_name: cdxgen_last_scan_timestamp
+
+        type: gauge
+
+        help: "Last cdxgen scan timestamp"
+
+        values:
+          - ts
+
+        query: |
+          SELECT
+            EXTRACT(EPOCH FROM MAX(collected_at)) AS ts
+          FROM scans;
+  - collector_name: osv_heartbeat
+
+    metrics:
+      - metric_name: osv_last_scan_timestamp
+
+        type: gauge
+
+        help: "Last osv-scanner scan timestamp"
+
+        values:
+          - ts
+
+        query: |
+          SELECT
+            EXTRACT(EPOCH FROM MAX(found_at)) AS ts
+          FROM vulnerability_scans;
