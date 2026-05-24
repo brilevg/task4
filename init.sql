@@ -30,7 +30,7 @@ CREATE TABLE software (
     version TEXT
 );
 
-CREATE TABLE vulnerabilities (
+CREATE TABLE vulnerability (
     id SERIAL PRIMARY KEY,
 
     vuln_id TEXT,
@@ -45,7 +45,7 @@ CREATE TABLE vulnerability_scans (
 
     scan_id INTEGER REFERENCES scans(id),
 
-    vulnerability_id INTEGER REFERENCES vulnerabilities(id),
+    vulnerability_id INTEGER REFERENCES vulnerability(id),
 
     package_name TEXT,
 

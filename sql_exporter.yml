@@ -88,7 +88,7 @@ collectors:
             vs.package_version,
             1 AS value
           FROM vulnerability_scans vs
-          JOIN vulnerabilities v
+          JOIN vulnerability v
             ON vs.vulnerability_id = v.id;
 
   - collector_name: vulnerabilities_count
@@ -111,6 +111,6 @@ collectors:
             v.severity,
             COUNT(*) AS vuln_count
           FROM vulnerability_scans vs
-          JOIN vulnerabilities v
+          JOIN vulnerability v
             ON vs.vulnerability_id = v.id
           GROUP BY v.severity

@@ -42,7 +42,7 @@ for result in results:
 
         package_version = pkg.get("package", {}).get("version", "unknown")
 
-        vulns = pkg.get("vulnerabilities", [])
+        vulns = pkg.get("vulnerability", [])
 
         for vuln in vulns:
 
@@ -71,14 +71,14 @@ for result in results:
 
             vuln_exists = psql(f"""
             SELECT id
-            FROM vulnerabilities
+            FROM vulnerability
             WHERE vuln_id = '{vuln_id}';
             """)
 
             if not vuln_exists:
 
                 psql(f"""
-                INSERT INTO vulnerabilities
+                INSERT INTO vulnerability
                 (
                     vuln_id,
                     summary,
@@ -94,7 +94,7 @@ for result in results:
 
                 vuln_exists = psql(f"""
                 SELECT id
-                FROM vulnerabilities
+                FROM vulnerability
                 WHERE vuln_id = '{vuln_id}';
                 """)
 
