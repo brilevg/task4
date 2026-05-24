@@ -1,7 +1,7 @@
 import json
 import subprocess
 
-OSV_PATH = "/root/task4/osv-result.json"
+OSV_PATH = "/root/task4/osv.json"
 
 
 def psql(query: str):
