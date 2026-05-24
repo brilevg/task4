@@ -13,37 +13,59 @@ target:
     sslmode: disable
 
 collectors:
+
   - collector_name: os_last_info
+
     metrics:
       - metric_name: os_last_scan_info
+
         type: gauge
+
         help: "Latest OS scan information"
-        values: [1]
-        labels: [host_uuid, hostname, os_name, kernel_version, collected_at]
-    query: |
-      SELECT 1 AS value,
-             host_uuid,
-             hostname,
-             os_name,
-             kernel_version,
-             to_char(collected_at, 'YYYY-MM-DD HH24:MI:SS') AS collected_at
-      FROM os_info
-      ORDER BY collected_at DESC
-      LIMIT 1
+
+        values:
+          - value
+
+        labels:
+          - host_uuid
+          - hostname
+          - os_name
+          - kernel_version
+          - collected_at
+
+        query: |
+          SELECT 1 AS value,
+                 host_uuid,
+                 hostname,
+                 os_name,
+                 kernel_version,
+                 to_char(collected_at, 'YYYY-MM-DD HH24:MI:SS') AS collected_at
+          FROM os_info
+          ORDER BY collected_at DESC
+          LIMIT 1
 
   - collector_name: packages_count
+
     metrics:
       - metric_name: installed_packages_total
+
         type: gauge
+
         help: "Total number of installed packages per scan"
-        values: [package_count]
-        labels: [host_uuid, collected_at]
-    query: |
-      SELECT 
-        o.host_uuid,
-        COUNT(s.id) AS package_count,
-        to_char(o.collected_at, 'YYYY-MM-DD HH24:MI:SS') AS collected_at
-      FROM os_info o
-      LEFT JOIN software s ON o.id = s.os_id
-      GROUP BY o.id, o.host_uuid, o.collected_at
-      ORDER BY o.collected_at DESC
+
+        values:
+          - package_count
+
+        labels:
+          - host_uuid
+          - collected_at
+
+        query: |
+          SELECT 
+            o.host_uuid,
+            COUNT(s.id) AS package_count,
+            to_char(o.collected_at, 'YYYY-MM-DD HH24:MI:SS') AS collected_at
+          FROM os_info o
+          LEFT JOIN software s ON o.id = s.os_id
+          GROUP BY o.id, o.host_uuid, o.collected_at
+          ORDER BY o.collected_at DESC
