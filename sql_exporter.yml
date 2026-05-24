@@ -7,7 +7,7 @@ target:
   collectors:
     - host_info
     - package_stats
-    - vulnerabilites_table
+    - vulnerabilities_table
     - vulnerabilities_count
 
 collectors:
