@@ -26,7 +26,7 @@ collectors:
         values:
           - value
 
-        labels:
+        key_labels:
           - host_uuid
           - hostname
           - os_name
@@ -56,7 +56,7 @@ collectors:
         values:
           - package_count
 
-        labels:
+        key_labels:
           - host_uuid
           - collected_at
 
