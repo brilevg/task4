@@ -5,12 +5,12 @@ global:
   max_idle_connections: 5
 
 target:
-  - host: postgres
-    port: 5432
-    user: monitor
-    password: monitorpass
-    database: monitoring
-    sslmode: disable
+  host: postgres
+  port: 5432
+  user: monitor
+  password: monitorpass
+  database: monitoring
+  sslmode: disable
 
 collectors:
 
