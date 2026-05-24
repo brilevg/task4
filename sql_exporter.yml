@@ -1,70 +1,62 @@
 global:
   scrape_timeout_offset: 500ms
-  min_interval: 0s
-  max_connections: 10
-  max_idle_connections: 5
 
 target:
   data_source_name: 'postgresql://monitor:monitorpass@postgres:5432/monitoring?sslmode=disable'
 
   collectors:
-    - os_last_info
-    - packages_count
+    - host_info
+    - package_stats
 
 collectors:
 
-  - collector_name: os_last_info
+  - collector_name: host_info
 
     metrics:
-      - metric_name: os_last_scan_info
+      - metric_name: host_last_scan
 
         type: gauge
 
-        help: "Latest OS scan information"
+        help: "Последнее сканирование ОС"
 
         values:
-          - value
+          - last_scan
 
         key_labels:
-          - host_uuid
           - hostname
           - os_name
           - kernel_version
-          - collected_at
 
         query: |
-          SELECT 1 AS value,
-                 host_uuid,
-                 hostname,
-                 os_name,
-                 kernel_version,
-                 to_char(collected_at, 'YYYY-MM-DD HH24:MI:SS') AS collected_at
-          FROM os_info
-          ORDER BY collected_at DESC
-          LIMIT 1
+          SELECT
+            hostname,
+            os_name,
+            kernel_version,
+            EXTRACT(EPOCH FROM MAX(collected_at)) AS last_scan
+          FROM hosts h
+          JOIN scans s ON h.id = s.host_id
+          GROUP BY hostname, os_name, kernel_version;
 
-  - collector_name: packages_count
+  - collector_name: package_stats
 
     metrics:
       - metric_name: installed_packages_total
 
         type: gauge
 
-        help: "Total number of installed packages per scan"
+        help: "Количество установленных пакетов"
 
         values:
           - package_count
 
         key_labels:
-          - host_uuid
-          - collected_at
+          - hostname
 
         query: |
-          SELECT 
-            o.host_uuid,
-            COUNT(s.id) AS package_count,
-            to_char(o.collected_at, 'YYYY-MM-DD HH24:MI:SS') AS collected_at
-          FROM os_info o
-          LEFT JOIN software s ON o.id = s.os_id
-          GROUP BY o.id, o.host_uuid, o.collected_at
-          ORDER BY o.collected_at DESC
+          SELECT
+            h.hostname,
+            s.package_count
+          FROM scans s
+          JOIN hosts h ON h.id = s.host_id
+          ORDER BY s.collected_at DESC
+          LIMIT 1;

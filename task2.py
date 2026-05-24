@@ -1,56 +1,108 @@
 import json
 import subprocess
-import uuid
 import platform
+import uuid
+import socket
 
 SBOM_PATH = "/root/task4/sbom/sbom.json"
+
+HOST_UUID = str(uuid.uuid5(uuid.NAMESPACE_DNS, socket.gethostname()))
+
+HOSTNAME = socket.gethostname()
+
+OS_NAME = platform.system()
+
+KERNEL = platform.release()
+
+
+def psql(query: str):
+
+    result = subprocess.check_output([
+        "docker", "exec", "-i",
+        "postgres",
+        "psql",
+        "-U", "monitor",
+        "-d", "monitoring",
+        "-t",
+        "-A",
+        "-c",
+        query
+    ])
+
+    return result.decode().strip()
+
 
 with open(SBOM_PATH, "r") as f:
     data = json.load(f)
 
-host_uuid = str(uuid.uuid4())
-
-os_name = platform.system()
-
-kernel = platform.release()
-
-insert_os = f"""
-INSERT INTO os_info
-(host_uuid, hostname, os_name, kernel_version)
-VALUES
-('{host_uuid}', 'archlinux', '{os_name}', '{kernel}');
-"""
-
-subprocess.run([
-    "docker", "exec", "-i",
-    "postgres",
-    "psql",
-    "-U", "monitor",
-    "-d", "monitoring",
-    "-q",
-    "-c",
-    insert_os
-])
-
-result = subprocess.check_output([
-    "docker", "exec", "-i",
-    "postgres",
-    "psql",
-    "-U", "monitor",
-    "-d", "monitoring",
-    "-t",
-    "-A",
-    "-c",
-    "SELECT MAX(id) FROM os_info;"
-])
-
-os_id = result.decode().strip()
-
 components = data.get("components", [])
+
+PACKAGE_COUNT = len(components)
+
+#
+# Проверяем существование host
+#
+
+host_check = psql(f"""
+SELECT id
+FROM hosts
+WHERE host_uuid = '{HOST_UUID}';
+""")
+
+#
+# Если host отсутствует
+#
+
+if not host_check:
+
+    psql(f"""
+    INSERT INTO hosts
+    (host_uuid, hostname, os_name, kernel_version)
+    VALUES
+    (
+        '{HOST_UUID}',
+        '{HOSTNAME}',
+        '{OS_NAME}',
+        '{KERNEL}'
+    );
+    """)
+
+    host_id = psql(f"""
+    SELECT id
+    FROM hosts
+    WHERE host_uuid = '{HOST_UUID}';
+    """)
+
+else:
+    host_id = host_check
+
+#
+# Создаём scan
+#
+
+psql(f"""
+INSERT INTO scans
+(host_id, package_count)
+VALUES
+(
+    {host_id},
+    {PACKAGE_COUNT}
+);
+""")
+
+scan_id = psql("""
+SELECT MAX(id)
+FROM scans;
+""")
+
+#
+# Добавляем packages
+#
 
 for comp in components:
 
     name = comp.get("name")
+
     version = comp.get("version")
 
     if not name:
@@ -59,20 +111,27 @@ for comp in components:
     if not version:
         version = "unknown"
 
-    insert_pkg = f"""
-    INSERT INTO software
-    (os_id, package_name, version)
-    VALUES
-    ({os_id}, '{name}', '{version}');
-    """
+    #
+    # Экранирование '
+    #
 
-    subprocess.run([
-        "docker", "exec", "-i",
-        "postgres",
-        "psql",
-        "-U", "monitor",
-        "-d", "monitoring",
-        "-q",
-        "-c",
-        insert_pkg
-    ])
+    name = name.replace("'", "''")
+
+    version = version.replace("'", "''")
+
+    psql(f"""
+    INSERT INTO software
+    (
+        scan_id,
+        package_name,
+        version
+    )
+    VALUES
+    (
+        {scan_id},
+        '{name}',
+        '{version}'
+    );
+    """)
+
+print("SBOM import completed")
