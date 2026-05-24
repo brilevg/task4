@@ -5,7 +5,11 @@ global:
   max_idle_connections: 5
 
 target:
-  data_source_name: 'postgresql://monitor:monitorpass@192.168.163.32:5432/monitoring?sslmode=disable'
+  data_source_name: 'postgresql://monitor:monitorpass@postgres:5432/monitoring?sslmode=disable'
+
+  collectors:
+    - os_last_info
+    - packages_count
 
 collectors:
 
