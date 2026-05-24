@@ -29,3 +29,27 @@ CREATE TABLE software (
 
     version TEXT
 );
+
+CREATE TABLE vulnerabilities (
+    id SERIAL PRIMARY KEY,
+
+    vuln_id TEXT,
+
+    summary TEXT,
+
+    severity TEXT
+);
+
+CREATE TABLE vulnerability_scans (
+    id SERIAL PRIMARY KEY,
+
+    scan_id INTEGER REFERENCES scans(id),
+
+    vulnerability_id INTEGER REFERENCES vulnerabilities(id),
+
+    package_name TEXT,
+
+    package_version TEXT,
+
+    found_at TIMESTAMP DEFAULT NOW()
+);

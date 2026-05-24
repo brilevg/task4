@@ -7,6 +7,8 @@ target:
   collectors:
     - host_info
     - package_stats
+    - vulnerabilites_table
+    - vulnerabilities_cou
 
 collectors:
 
@@ -60,3 +62,55 @@ collectors:
           JOIN hosts h ON h.id = s.host_id
           ORDER BY s.collected_at DESC
           LIMIT 1;
+  - collector_name: vulnerabilities_table
+
+    metrics:
+      - metric_name: vulnerabilities_info
+
+        type: gauge
+
+        help: "Current vulnerabilities"
+
+        values:
+          - value
+
+        key_labels:
+          - vuln_id
+          - severity
+          - package_name
+          - package_version
+
+        query: |
+          SELECT
+            v.vuln_id,
+            v.severity,
+            vs.package_name,
+            vs.package_version,
+            1 AS value
+          FROM vulnerability_scans vs
+          JOIN vulnerabilities v
+            ON vs.vulnerability_id = v.id;
+
+  - collector_name: vulnerabilities_count
+
+    metrics:
+      - metric_name: vulnerabilities_total
+
+        type: gauge
+
+        help: "Aggregated vulnerabilities count"
+
+        values:
+          - vuln_count
+
+        key_labels:
+          - severity
+
+        query: |
+          SELECT
+            v.severity,
+            COUNT(*) AS vuln_count
+          FROM vulnerability_scans vs
+          JOIN vulnerabilities v
+            ON vs.vulnerability_id = v.id
+          GROUP BY v.severity
