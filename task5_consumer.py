@@ -153,7 +153,7 @@ for message in consumer:
         #
         # insert packages
         #
-
+        values = []
         for comp in components:
 
             name = comp.get("name")
@@ -170,7 +170,7 @@ for message in consumer:
             name = name.replace("'", "''")
 
             version = version.replace("'", "''")
-
+            values.append(f"({scan_id}, '{name}', '{version}')")
             psql(f"""
 
             INSERT INTO software
@@ -181,11 +181,7 @@ for message in consumer:
             )
 
             VALUES
-            (
-                {scan_id},
-                '{name}',
-                '{version}'
-            );
+            {",".join(values)};
 
             """)
 
