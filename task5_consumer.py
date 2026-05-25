@@ -1,27 +1,35 @@
 import json
-
-import psycopg2
+import subprocess
 
 from kafka import KafkaConsumer
 
 
-#
-# PostgreSQL connection
-#
+def psql(query: str):
 
-conn = psycopg2.connect(
-    host="localhost",
-    database="monitoring",
-    user="monitor",
-    password="monitorpass"
-)
+    result = subprocess.check_output([
 
-cur = conn.cursor()
+        "docker", "exec", "-i",
 
+        "postgres",
 
-#
-# Kafka consumer
-#
+        "psql",
+
+        "-U", "monitor",
+
+        "-d", "monitoring",
+
+        "-t",
+
+        "-A",
+
+        "-c",
+
+        query
+
+    ])
+
+    return result.decode().strip()
+
 
 consumer = KafkaConsumer(
 
@@ -52,7 +60,7 @@ for message in consumer:
 
     if topic == "sbom-data":
 
-        print("Processing SBOM data")
+        print("Processing SBOM")
 
         host_uuid = data["host_uuid"]
 
@@ -70,23 +78,21 @@ for message in consumer:
         # host exists
         #
 
-        cur.execute("""
+        host_check = psql(f"""
 
         SELECT id
         FROM hosts
-        WHERE host_uuid = %s;
+        WHERE host_uuid = '{host_uuid}';
 
-        """, (host_uuid,))
-
-        host = cur.fetchone()
+        """)
 
         #
         # create host
         #
 
-        if not host:
+        if not host_check:
 
-            cur.execute("""
+            psql(f"""
 
             INSERT INTO hosts
             (
@@ -97,30 +103,31 @@ for message in consumer:
             )
 
             VALUES
-            (%s, %s, %s, %s)
+            (
+                '{host_uuid}',
+                '{hostname}',
+                '{os_name}',
+                '{kernel}'
+            );
 
-            RETURNING id;
+            """)
 
-            """, (
+            host_id = psql(f"""
 
-                host_uuid,
-                hostname,
-                os_name,
-                kernel
-            ))
+            SELECT id
+            FROM hosts
+            WHERE host_uuid = '{host_uuid}';
 
-            host_id = cur.fetchone()[0]
-
-            conn.commit()
+            """)
 
         else:
-            host_id = host[0]
+            host_id = host_check
 
         #
         # create scan
         #
 
-        cur.execute("""
+        psql(f"""
 
         INSERT INTO scans
         (
@@ -129,19 +136,19 @@ for message in consumer:
         )
 
         VALUES
-        (%s, %s)
+        (
+            {host_id},
+            {package_count}
+        );
 
-        RETURNING id;
+        """)
 
-        """, (
+        scan_id = psql("""
 
-            host_id,
-            package_count
-        ))
+        SELECT MAX(id)
+        FROM scans;
 
-        scan_id = cur.fetchone()[0]
-
-        conn.commit()
+        """)
 
         #
         # insert packages
@@ -156,7 +163,15 @@ for message in consumer:
             if not name:
                 continue
 
-            cur.execute("""
+            #
+            # escape '
+            #
+
+            name = name.replace("'", "''")
+
+            version = version.replace("'", "''")
+
+            psql(f"""
 
             INSERT INTO software
             (
@@ -166,18 +181,15 @@ for message in consumer:
             )
 
             VALUES
-            (%s, %s, %s);
+            (
+                {scan_id},
+                '{name}',
+                '{version}'
+            );
 
-            """, (
+            """)
 
-                scan_id,
-                name,
-                version
-            ))
-
-        conn.commit()
-
-        print("SBOM saved to PostgreSQL")
+        print("SBOM saved")
 
     #
     # =========================
@@ -187,32 +199,16 @@ for message in consumer:
 
     elif topic == "osv-data":
 
-        print("Processing OSV data")
+        print("Processing OSV")
 
         results = data.get("results", [])
 
-        #
-        # latest scan
-        #
-
-        cur.execute("""
+        scan_id = psql("""
 
         SELECT MAX(id)
         FROM scans;
 
         """)
-
-        scan_id = cur.fetchone()[0]
-
-        if not scan_id:
-
-            print("No scans found")
-
-            continue
-
-        #
-        # parse osv
-        #
 
         for result in results:
 
@@ -268,18 +264,28 @@ for message in consumer:
                         )
 
                     #
+                    # escape '
+                    #
+
+                    vuln_id = vuln_id.replace("'", "''")
+
+                    summary = summary.replace("'", "''")
+
+                    package_name = package_name.replace("'", "''")
+
+                    package_version = package_version.replace("'", "''")
+
+                    #
                     # vulnerability exists
                     #
 
-                    cur.execute("""
+                    vuln_exists = psql(f"""
 
                     SELECT id
                     FROM vulnerability
-                    WHERE vuln_id = %s;
+                    WHERE vuln_id = '{vuln_id}';
 
-                    """, (vuln_id,))
-
-                    vuln_exists = cur.fetchone()
+                    """)
 
                     #
                     # create vulnerability
@@ -287,7 +293,7 @@ for message in consumer:
 
                     if not vuln_exists:
 
-                        cur.execute("""
+                        psql(f"""
 
                         INSERT INTO vulnerability
                         (
@@ -297,29 +303,27 @@ for message in consumer:
                         )
 
                         VALUES
-                        (%s, %s, %s)
+                        (
+                            '{vuln_id}',
+                            '{summary}',
+                            '{severity}'
+                        );
 
-                        RETURNING id;
+                        """)
 
-                        """, (
+                        vuln_exists = psql(f"""
 
-                            vuln_id,
-                            summary,
-                            severity
-                        ))
+                        SELECT id
+                        FROM vulnerability
+                        WHERE vuln_id = '{vuln_id}';
 
-                        vulnerability_id = cur.fetchone()[0]
-
-                        conn.commit()
-
-                    else:
-                        vulnerability_id = vuln_exists[0]
+                        """)
 
                     #
                     # insert detection
                     #
 
-                    cur.execute("""
+                    psql(f"""
 
                     INSERT INTO vulnerability_scans
                     (
@@ -330,16 +334,13 @@ for message in consumer:
                     )
 
                     VALUES
-                    (%s, %s, %s, %s);
+                    (
+                        {scan_id},
+                        {vuln_exists},
+                        '{package_name}',
+                        '{package_version}'
+                    );
 
-                    """, (
+                    """)
 
-                        scan_id,
-                        vulnerability_id,
-                        package_name,
-                        package_version
-                    ))
-
-        conn.commit()
-
-        print("OSV saved to PostgreSQL")
+        print("OSV saved")
